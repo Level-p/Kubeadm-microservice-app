@@ -27,15 +27,21 @@
         KUBECONFIG: "{{ kubeconfig_path }}"
       ignore_errors: true
 
+    # complete.yaml hardcodes the sock-shop namespace, so render a copy for stage
+    - name: Render manifest for the stage namespace
+      shell: sed 's/sock-shop/stage/g' complete.yaml > /tmp/complete-stage.yaml
+      args:
+        chdir: "{{ deploy_path }}"
+
     - name: Delete previous staging deployment (safe delete)
-      command: kubectl delete -f complete.yaml -n stage --ignore-not-found=true
+      command: kubectl delete -f /tmp/complete-stage.yaml -n stage --ignore-not-found=true
       args:
         chdir: "{{ deploy_path }}"
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
 
     - name: Apply new staging deployment to stage namespace
-      command: kubectl apply -f complete.yaml -n stage
+      command: kubectl apply -f /tmp/complete-stage.yaml -n stage
       args:
         chdir: "{{ deploy_path }}"
       environment:

@@ -1,17 +1,25 @@
-- hosts: worker-nodes
+---
+- name: Join Worker Nodes to Kubernetes Cluster
+  hosts: worker-nodes
   become: true
-  gather_facts: true
   tasks:
-    - name: Generated token to join worker.
-      local_action: shell sed -n 93,94p /tmp/kubeadm-init.out > /tmp/workertoken
 
-    - name: Copy worker token
+    - name: Extract Worker Join Token from kubeadm output (on control plane)
+      delegate_to: localhost
+      shell: |
+        sed -n '93,94p' /tmp/kubeadm-init.out > /tmp/join-worker-command
+      run_once: true
+
+    - name: Copy join command to worker node
       copy:
-        src: /tmp/workertoken
-        dest: /tmp/join-command
-        owner: root
-        group: root
+        src: /tmp/join-worker-command
+        dest: /tmp/join-worker-command
         mode: '0777'
 
-    - name: Add new Kubernetes worker member
-      command: sh /tmp/join-command
+    - name: Insert socket url at the back of token
+      shell: sed -i '$ s/$/\ --cri-socket\ unix:\/\/\/var\/run\/cri-dockerd.sock/g' /tmp/join-worker-command
+
+    - name: Join node to cluster as worker
+      command: sh /tmp/join-worker-command
+      args:
+        creates: /etc/kubernetes/kubelet.conf

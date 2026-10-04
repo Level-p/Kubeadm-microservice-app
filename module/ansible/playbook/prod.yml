@@ -27,15 +27,23 @@
         KUBECONFIG: "{{ kubeconfig_path }}"
       ignore_errors: true
 
+    # complete.yaml hardcodes the sock-shop namespace and front-end nodePort 30001
+    # (already taken by stage), so render a copy for prod with its own namespace and port
+    - name: Render manifest for the prod namespace
+      shell: |
+        sed -e 's/sock-shop/prod/g' -e 's/nodePort: 30001/nodePort: 30002/' complete.yaml > /tmp/complete-prod.yaml
+      args:
+        chdir: "{{ deploy_path }}"
+
     - name: Delete previous prod deployment (safe delete)
-      command: kubectl delete -f complete.yaml -n prod --ignore-not-found=true
+      command: kubectl delete -f /tmp/complete-prod.yaml -n prod --ignore-not-found=true
       args:
         chdir: "{{ deploy_path }}"
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
 
     - name: Apply new prod deployment to prod namespace
-      command: kubectl apply -f complete.yaml -n prod
+      command: kubectl apply -f /tmp/complete-prod.yaml -n prod
       args:
         chdir: "{{ deploy_path }}"
       environment:

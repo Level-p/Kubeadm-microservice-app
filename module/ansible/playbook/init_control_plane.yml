@@ -1,92 +1,34 @@
 ---
-- hosts: haproxy-1
+- name: Initialize first Kubernetes master
+  hosts: main-master
   become: true
   vars_files:
     - /etc/ansible/haproxy.yml
   tasks:
-    - name: Installation of keepalived
-      apt:
-        name: keepalived
-        state: present
-        update_cache: true
+    - name: Initialize Kubernetes Master
+      command: >
+        kubeadm init
+        --control-plane-endpoint={{ haproxy_1 }}:6443
+        --pod-network-cidr=192.168.0.0/16
+        --cri-socket=/run/cri-dockerd.sock
+        --upload-certs
+      register: kubeadm_init
+      args:
+        creates: /etc/kubernetes/admin.conf
 
-    - name: Configure keepalived
-      copy:
-        dest: /etc/keepalived/keepalived.conf
-        owner: root
-        group: root
-        mode: '0644'
-        content: |
-          vrrp_instance haproxy-vip {
-            state MASTER
-            priority 100
-            interface eth0
-            virtual_router_id 60
-            advert_int 1
+    - name: Save kubeadm init output to control node
+      local_action:
+        copy content="{{ kubeadm_init.stdout }}" dest="/tmp/kubeadm-init.out"
 
-            authentication {
-              auth_type PASS
-              auth_pass 1234
-            }
+    - name: make directory and copy required file to it
+      shell: |
+        sudo su -c 'mkdir -p $HOME/.kube' ubuntu
+        sudo su -c 'sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config' ubuntu
+        sudo su -c 'sudo chown $(id -u):$(id -g) $HOME/.kube/config' ubuntu
 
-            unicast_src_ip {{ haproxy_1 }}
-            unicast_peer {
-              {{ haproxy_2 }}
-            }
+    - name: Fetch kubeconfig to Ansible control node
+      fetch:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/ubuntu/config
+        flat: true
 
-            virtual_ipaddress {
-              10.0.1.19/24
-            }
-          }
-
-    - name: Restart keepalived
-      service:
-        name: keepalived
-        state: restarted
-        enabled: true
-
-- hosts: haproxy-2
-  become: true
-  vars_files:
-    - /etc/ansible/haproxy.yml
-  tasks:
-    - name: Installation of keepalived
-      apt:
-        name: keepalived
-        state: present
-        update_cache: true
-
-    - name: Configure keepalived
-      copy:
-        dest: /etc/keepalived/keepalived.conf
-        owner: root
-        group: root
-        mode: '0644'
-        content: |
-          vrrp_instance haproxy-vip {
-            state BACKUP
-            priority 99
-            interface eth0
-            virtual_router_id 60
-            advert_int 1
-
-            authentication {
-              auth_type PASS
-              auth_pass 1234
-            }
-
-            unicast_src_ip {{ haproxy_2 }}
-            unicast_peer {
-              {{ haproxy_1 }}
-            }
-
-            virtual_ipaddress {
-              10.0.1.19/24
-            }
-          }
-
-    - name: Restart keepalived
-      service:
-        name: keepalived
-        state: restarted
-        enabled: true
