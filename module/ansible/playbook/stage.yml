@@ -4,7 +4,7 @@
   become: true
 
   vars:
-    app_repo_url: "https://github.com/CloudHight/Sock-Shop-App-Repo.git"
+    app_repo_url: "https://github.com/Level-p/Microservice-Sock-Shop-App-Repo.git"
     app_repo_path: "/home/ubuntu/Sock-Shop-App-Repo"
     deploy_path: "/home/ubuntu/Sock-Shop-App-Repo/"
     kubeconfig_path: "/home/ubuntu/.kube/config"
