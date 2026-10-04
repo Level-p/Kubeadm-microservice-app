@@ -96,5 +96,5 @@ module "loadbalancer" {
   subnet_ids      = module.cluster_vpc.public_subnet_ids
   certificate_arn = data.aws_acm_certificate.cluster_cert.arn
   domain_name     = local.domain_name
-  target_ids      = module.haproxy.haproxy_instance_ids
+  target_ids      = module.worker_nodes.worker_instance_ip
 }
