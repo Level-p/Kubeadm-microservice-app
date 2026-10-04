@@ -51,7 +51,7 @@ resource "aws_lb_target_group_attachment" "stage_tg_attachment" {
   count            = length(var.target_ids)
   target_group_arn = aws_lb_target_group.stage_tg.arn
   target_id        = var.target_ids[count.index]
-  port             = 30000
+  port             = 443
 }
 
 #creating stage listener for https load balancer
@@ -138,7 +138,7 @@ resource "aws_lb_target_group_attachment" "prod_tg_attachment" {
   count            = length(var.target_ids)
   target_group_arn = aws_lb_target_group.prod_tg.arn
   target_id        = var.target_ids[count.index]
-  port             = 30001
+  port             = 443
 }
 
 #creating prod listener for https load balancer
@@ -225,7 +225,7 @@ resource "aws_lb_target_group_attachment" "prometheus_tg_attachment" {
   count            = length(var.target_ids)
   target_group_arn = aws_lb_target_group.prometheus_tg.arn
   target_id        = var.target_ids[count.index]
-  port             = 31090
+  port             = 443
 }
 
 #creating prometheus listener for https load balancer
@@ -312,7 +312,7 @@ resource "aws_lb_target_group_attachment" "grafana_tg_attachment" {
   count            = length(var.target_ids)
   target_group_arn = aws_lb_target_group.grafana_tg.arn
   target_id        = var.target_ids[count.index]
-  port             = 31300
+  port             = 443
 }
 
 #creating grafana listener for https load balancer
