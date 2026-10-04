@@ -24,8 +24,8 @@ module "bastionhost" {
   name           = local.cluster_name
   vpc            = module.cluster_vpc.vpc_id
   public_subnets = module.cluster_vpc.public_subnet_ids
-  privatekey =  module.cluster_vpc.private_key_pem
-  keypair =  module.cluster_vpc.key_name
+  privatekey     = module.cluster_vpc.private_key_pem
+  keypair        = module.cluster_vpc.key_name
 }
 
 module "ansible" {
