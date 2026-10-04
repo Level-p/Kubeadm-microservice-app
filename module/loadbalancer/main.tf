@@ -31,10 +31,15 @@ resource "aws_lb" "stage_lb" {
 
 #creating stage target group
 resource "aws_lb_target_group" "stage_tg" {
-  name     = "${var.name}-stage-tg"
-  port     = 443
-  protocol = "HTTPS"
-  vpc_id   = var.vpc_id
+  name        = "${var.name}-stage-tg-ip"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   health_check {
     path                = "/"
@@ -51,7 +56,7 @@ resource "aws_lb_target_group_attachment" "stage_tg_attachment" {
   count            = length(var.target_ids)
   target_group_arn = aws_lb_target_group.stage_tg.arn
   target_id        = var.target_ids[count.index]
-  port             = 30000
+  port             = 30001
 }
 
 #creating stage listener for https load balancer
@@ -118,10 +123,15 @@ resource "aws_lb" "prod_lb" {
 
 #creating prod target group
 resource "aws_lb_target_group" "prod_tg" {
-  name     = "${var.name}-prod-tg"
-  port     = 443
-  protocol = "HTTPS"
-  vpc_id   = var.vpc_id
+  name        = "${var.name}-prod-tg-ip"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   health_check {
     path                = "/"
@@ -138,7 +148,7 @@ resource "aws_lb_target_group_attachment" "prod_tg_attachment" {
   count            = length(var.target_ids)
   target_group_arn = aws_lb_target_group.prod_tg.arn
   target_id        = var.target_ids[count.index]
-  port             = 30001
+  port             = 30002
 }
 
 #creating prod listener for https load balancer
@@ -205,10 +215,15 @@ resource "aws_lb" "prometheus_lb" {
 
 #creating prometheus target group
 resource "aws_lb_target_group" "prometheus_tg" {
-  name     = "${var.name}-prometheus-tg"
-  port     = 443
-  protocol = "HTTPS"
-  vpc_id   = var.vpc_id
+  name        = "${var.name}-prometheus-tg-ip"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   health_check {
     path                = "/"
@@ -292,10 +307,15 @@ resource "aws_lb" "grafana_lb" {
 
 #creating grafana target group
 resource "aws_lb_target_group" "grafana_tg" {
-  name     = "${var.name}-grafana-tg"
-  port     = 443
-  protocol = "HTTPS"
-  vpc_id   = var.vpc_id
+  name        = "${var.name}-grafana-tg-ip"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   health_check {
     path                = "/"
