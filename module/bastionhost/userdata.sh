@@ -3,6 +3,11 @@
 # Set hostname
 hostnamectl set-hostname bastionhost
 
+mkdir -p /home/ubuntu/.ssh
+echo "${privatekey}" > /home/ubuntu/.ssh/id_rsa
+chmod 400 /home/ubuntu/.ssh/id_rsa
+chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa
+
 # Update packages
 apt-get update -y
 
