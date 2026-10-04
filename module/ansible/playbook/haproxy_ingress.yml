@@ -1,0 +1,120 @@
+---
+# The ALBs forward stage./prod./grafana./prometheus.<domain> to the HAProxy
+# nodes on port 443 (HTTPS). HAProxy only listened on 6443, so every request
+# returned 502. This adds a 443 frontend that routes by hostname to the
+# NodePorts on the worker nodes, and keeps the 6443 API server frontend.
+- name: Configure HAProxy as the HTTPS ingress for the cluster
+  hosts: haproxy-1, haproxy-2
+  become: true
+  vars:
+    domain: mfon21.space
+    stage_port: 30001
+    prod_port: 30002
+    grafana_port: 31300
+    prometheus_port: 31090
+  tasks:
+    # The ALB re-encrypts to its targets but does not validate the certificate,
+    # so a self-signed one is enough here.
+    - name: Create a self-signed certificate for HAProxy
+      shell: |
+        openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+          -subj "/CN=haproxy.{{ domain }}" \
+          -keyout /tmp/haproxy.key -out /tmp/haproxy.crt
+        cat /tmp/haproxy.crt /tmp/haproxy.key > /etc/haproxy/self.pem
+        chmod 600 /etc/haproxy/self.pem
+        rm -f /tmp/haproxy.key /tmp/haproxy.crt
+      args:
+        creates: /etc/haproxy/self.pem
+
+    - name: Write HAProxy configuration
+      copy:
+        dest: /etc/haproxy/haproxy.cfg
+        owner: root
+        group: root
+        mode: '0644'
+        validate: haproxy -c -f %s
+        content: |
+          global
+              log /dev/log local0
+              maxconn 4096
+
+          defaults
+              log global
+              timeout connect 5s
+              timeout client  60s
+              timeout server  60s
+
+          frontend fe-apiserver
+              bind 0.0.0.0:6443
+              mode tcp
+              option tcplog
+              default_backend be-apiserver
+
+          backend be-apiserver
+              balance roundrobin
+              mode tcp
+              option tcplog
+              option tcp-check
+          {% for h in groups['main-master'] + groups['member-master'] %}
+              server master{{ loop.index }} {{ h }}:6443 check
+          {% endfor %}
+
+          frontend fe-https
+              bind 0.0.0.0:443 ssl crt /etc/haproxy/self.pem
+              mode http
+              option httplog
+              acl host_stage      hdr(host) -i stage.{{ domain }}
+              acl host_prod       hdr(host) -i prod.{{ domain }}
+              acl host_grafana    hdr(host) -i grafana.{{ domain }}
+              acl host_prometheus hdr(host) -i prometheus.{{ domain }}
+              use_backend be-stage      if host_stage
+              use_backend be-prod       if host_prod
+              use_backend be-grafana    if host_grafana
+              use_backend be-prometheus if host_prometheus
+              default_backend be-default
+
+          # ALB health checks arrive with the instance IP as Host, so answer them here
+          backend be-default
+              mode http
+              http-request return status 200 content-type text/plain string "ok"
+
+          backend be-stage
+              mode http
+              balance roundrobin
+          {% for h in groups['worker-nodes'] %}
+              server worker{{ loop.index }} {{ h }}:{{ stage_port }} check
+          {% endfor %}
+
+          backend be-prod
+              mode http
+              balance roundrobin
+          {% for h in groups['worker-nodes'] %}
+              server worker{{ loop.index }} {{ h }}:{{ prod_port }} check
+          {% endfor %}
+
+          backend be-grafana
+              mode http
+              balance roundrobin
+          {% for h in groups['worker-nodes'] %}
+              server worker{{ loop.index }} {{ h }}:{{ grafana_port }} check
+          {% endfor %}
+
+          backend be-prometheus
+              mode http
+              balance roundrobin
+          {% for h in groups['worker-nodes'] %}
+              server worker{{ loop.index }} {{ h }}:{{ prometheus_port }} check
+          {% endfor %}
+      notify: Restart haproxy
+
+    - name: Ensure HAProxy is enabled and running
+      service:
+        name: haproxy
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Restart haproxy
+      service:
+        name: haproxy
+        state: restarted

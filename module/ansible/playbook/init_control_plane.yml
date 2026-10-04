@@ -10,7 +10,7 @@
         kubeadm init
         --control-plane-endpoint={{ haproxy_1 }}:6443
         --pod-network-cidr=192.168.0.0/16
-        --cri-socket=/run/cri-dockerd.sock
+        --cri-socket=unix:///var/run/cri-dockerd.sock
         --upload-certs
       register: kubeadm_init
       args:
@@ -26,9 +26,25 @@
         sudo su -c 'sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config' ubuntu
         sudo su -c 'sudo chown $(id -u):$(id -g) $HOME/.kube/config' ubuntu
 
-    - name: Fetch kubeconfig to Ansible control node
-      fetch:
-        src: /etc/kubernetes/admin.conf
-        dest: /home/ubuntu/config
-        flat: true
+    - name: Generate worker join command
+      shell: kubeadm token create --print-join-command > /tmp/worker-join.sh
+      changed_when: true
 
+    - name: Generate control plane join command
+      shell: |
+        CERT_KEY=$(kubeadm init phase upload-certs --upload-certs | tail -1)
+        echo "$(cat /tmp/worker-join.sh) --control-plane --certificate-key $CERT_KEY" > /tmp/master-join.sh
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    - name: Fetch join commands and kubeconfig to Ansible control node
+      fetch:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        flat: true
+      loop:
+        - { src: /tmp/worker-join.sh, dest: /tmp/worker-join.sh }
+        - { src: /tmp/master-join.sh, dest: /tmp/master-join.sh }
+        - { src: /etc/kubernetes/admin.conf, dest: /tmp/kubeconfig }
+        - { src: /etc/kubernetes/admin.conf, dest: /home/ubuntu/config }

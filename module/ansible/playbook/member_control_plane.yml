@@ -2,24 +2,25 @@
   become: true
   gather_facts: true
   tasks:
-
-    - name: Generated token to join master.
-      local_action: shell sed -n 83,85p /tmp/kubeadm-init.out > /tmp/mastertoken
-    
-    - name: Copy master token
-      copy:
-        src: /tmp/mastertoken
-        dest: /tmp/join-command
-        owner: root
-        group: root
-        mode: '0777'
-
-    - name: Insert socket url at the back of token
-      shell: sed -i '$ s/$/\ --cri-socket\ unix:\/\/\/var\/run\/cri-dockerd.sock/g' /tmp/join-command
+    # Generated at run time so the certificate key always matches the secret
+    # currently stored in the cluster (a stale or old key causes
+    # "cipher: message authentication failed").
+    - name: Generate a fresh control plane join command on the main master
+      shell: |
+        CERT_KEY=$(kubeadm init phase upload-certs --upload-certs 2>/dev/null | grep -E '^[0-9a-f]{64}$' | tail -1)
+        echo "$(kubeadm token create --print-join-command) --control-plane --certificate-key $CERT_KEY"
+      args:
+        executable: /bin/bash
+      delegate_to: "{{ groups['main-master'][0] }}"
+      run_once: true
+      register: master_join
+      changed_when: false
 
     - name: Add new Kubernetes master member
-      command: sh /tmp/join-command
-    
+      command: "{{ master_join.stdout }} --cri-socket unix:///var/run/cri-dockerd.sock"
+      args:
+        creates: /etc/kubernetes/admin.conf
+
     - name: make directory and copy required file to it
       shell: |
         sudo su -c 'mkdir -p $HOME/.kube' ubuntu

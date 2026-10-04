@@ -1,4 +1,17 @@
 ---
+# Pull the admin kubeconfig from the main master so this playbook does not
+# depend on init_control_plane.yml having left it on the Ansible server.
+- name: Fetch kubeconfig from the main master
+  hosts: main-master
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Fetch admin.conf to the Ansible server
+      fetch:
+        src: /etc/kubernetes/admin.conf
+        dest: /tmp/kubeconfig
+        flat: true
+
 - name: Configure HAProxy nodes as Kubernetes management nodes
   hosts: haproxy-1, haproxy-2
   remote_user: ubuntu

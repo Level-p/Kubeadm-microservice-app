@@ -11,11 +11,13 @@
 
   tasks:
 
-    - name: Ensure application repository is present and on stage branch
+    # The app repo only has a main branch; create a stage branch there and
+    # change this back if staging should track different code.
+    - name: Ensure application repository is present and on main branch
       git:
         repo: "{{ app_repo_url }}"
         dest: "{{ app_repo_path }}"
-        version: stage
+        version: main
         force: yes
         update: yes
 

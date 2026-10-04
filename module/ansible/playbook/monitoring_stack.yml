@@ -21,14 +21,10 @@
     - name: Update Helm repositories
       become_user: ubuntu
       command: helm repo update
-    - name: Create Kubernetes namespace for Prometheus
-      become_user: ubuntu
-      command: kubectl create namespace kube-prometheus-stack
-      ignore_errors: true
-    - name: Install Prometheus and Grafana with NodePort
+    - name: Install or upgrade Prometheus and Grafana with NodePort
       become_user: ubuntu
       command: >
-        helm install kube-prometheus-stack
+        helm upgrade --install kube-prometheus-stack
         --create-namespace
         --namespace kube-prometheus-stack
         prometheus-community/kube-prometheus-stack
