@@ -1,0 +1,8 @@
+# Force LF everywhere so Terraform sees identical files on Windows and on the
+# Linux Jenkins agent (CRLF user_data caused Terraform to stop the Jenkins server).
+* text=auto eol=lf
+*.tf text eol=lf
+*.sh text eol=lf
+*.hcl text eol=lf
+Jenkinsfile text eol=lf
+*.pem binary

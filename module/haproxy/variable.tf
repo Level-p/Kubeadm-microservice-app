@@ -1,0 +1,10 @@
+variable "vpc" {}
+variable "name" {}
+variable "bastion-sg" {}
+variable "ansible-sg" {}
+variable "subnet_ids" {}
+variable "keypair" {}
+variable "master1-ip" {}
+variable "master2-ip" {}
+variable "master3-ip" {}
+variable "lb-sg-ids" {}

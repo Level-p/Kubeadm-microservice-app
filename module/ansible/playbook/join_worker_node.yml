@@ -1,0 +1,17 @@
+- hosts: worker-nodes
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Generated token to join worker.
+      local_action: shell sed -n 93,94p /tmp/kubeadm-init.out > /tmp/workertoken
+
+    - name: Copy worker token
+      copy:
+        src: /tmp/workertoken
+        dest: /tmp/join-command
+        owner: root
+        group: root
+        mode: '0777'
+
+    - name: Add new Kubernetes worker member
+      command: sh /tmp/join-command

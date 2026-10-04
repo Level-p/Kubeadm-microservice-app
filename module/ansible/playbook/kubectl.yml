@@ -1,0 +1,45 @@
+---
+- name: Configure HAProxy nodes as Kubernetes management nodes
+  hosts: haproxy-1, haproxy-2
+  remote_user: ubuntu
+  become: true
+  become_method: sudo
+  become_user: root
+  gather_facts: true
+  connection: ssh
+  vars:
+    kubeconfig_src: "/tmp/kubeconfig"   # Path on Ansible host where kubeconfig is stored
+    kubeconfig_dest: "/home/ubuntu/.kube/config"
+  tasks:
+    - name: Ensure .kube directory exists for ubuntu user
+      file:
+        path: /home/ubuntu/.kube
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+    - name: Copy kubeconfig file to HAProxy nodes
+      copy:
+        src: "{{ kubeconfig_src }}"
+        dest: "{{ kubeconfig_dest }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+    - name: Install kubectl using snap
+      shell: |
+        snap install kubectl --classic
+        
+# Separate play for Weave CNI deployment on haproxy-1 only
+- name: Deploy Weave CNI on haproxy-1
+  hosts: haproxy-1
+  remote_user: ubuntu
+  become: true
+  become_user: yes
+  gather_facts: false
+  connection: ssh
+  tasks:
+    - name: Deploy Weave CNI
+      become_user: ubuntu
+      shell: |
+        kubectl apply -f "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml"
+      when: "'haproxy-1' in group_names"

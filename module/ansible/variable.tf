@@ -1,0 +1,15 @@
+variable "name" {}
+variable "vpc_id" {}
+variable "key_name" {}
+variable "bastion_sg" {}
+variable "subnet_id" {}
+variable "privatekey" {}
+variable "bucket_name" {}
+variable "master1_ip" {}
+variable "master2_ip" {}
+variable "master3_ip" {}
+variable "worker1_ip" {}
+variable "worker2_ip" {}
+variable "worker3_ip" {}
+variable "haproxy1_ip" {}
+variable "haproxy2_ip" {}
