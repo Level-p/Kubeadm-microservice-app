@@ -97,5 +97,5 @@ module "loadbalancer" {
   certificate_arn = data.aws_acm_certificate.cluster_cert.arn
   domain_name     = local.domain_name
   # target_ids      = module.worker_nodes.worker_instance_ip
-  target_ids      = module.haproxy.haproxy_private_ips
+  target_ids = module.haproxy.haproxy_private_ips
 }

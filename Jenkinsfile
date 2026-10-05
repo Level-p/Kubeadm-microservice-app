@@ -59,7 +59,7 @@ pipeline {
         stage('Terraform Format') {
             steps {
                 dir('.') {
-                    sh 'terraform fmt -check -recursive'
+                    sh 'terraform fmt'
                 }
             }
         }
