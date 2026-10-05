@@ -8,25 +8,21 @@ AWS_REGION="eu-west-2"
 AWS_PROFILE="default"
 
 
-# create S3 bucket
-
-echo "Creating S3 bucket..."
-aws s3api create-bucket \
- --bucket "$BUCKET_NAME" \
- --region "$AWS_REGION" \
- --profile "$AWS_PROFILE" \
- --create-bucket-configuration LocationConstraint="$AWS_REGION"
-echo "S3 bucket created."
+# create S3 bucket (skipped if it already exists and is accessible)
+if aws s3api head-bucket --bucket "$BUCKET_NAME" --region "$AWS_REGION" --profile "$AWS_PROFILE" 2>/dev/null; then
+  echo "S3 bucket $BUCKET_NAME already exists. Skipping creation."
+else
+  echo "Creating S3 bucket..."
+  aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$AWS_REGION" --profile "$AWS_PROFILE" \
+    --create-bucket-configuration LocationConstraint="$AWS_REGION"
+  echo "S3 bucket created."
+fi
 
 
 # enable S3versioning
-
 echo "Enabling S3 versioning..."
-aws s3api put-bucket-versioning \
- --bucket "$BUCKET_NAME" \
- --region "$AWS_REGION" \
- --profile "$AWS_PROFILE" \
- --versioning-configuration Status=Enabled
+aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --region "$AWS_REGION" --profile "$AWS_PROFILE" \
+  --versioning-configuration Status=Enabled
 echo "Versioning enabled."
 
 
@@ -60,18 +56,22 @@ echo "Public access blocked."
 
 # Create DynamoDB table
 
-echo "Creating DynamoDB table for state locking..."
+if aws dynamodb describe-table --table-name "$DYNAMODB_TABLE" --region "$AWS_REGION" >/dev/null 2>&1; then
+  echo "DynamoDB table $DYNAMODB_TABLE already exists. Skipping creation."
+else
+  echo "Creating DynamoDB table for state locking..."
 
-aws dynamodb create-table \
-  --table-name "$DYNAMODB_TABLE" \
-  --attribute-definitions \
-      AttributeName=LockID,AttributeType=S \
-  --key-schema \
-      AttributeName=LockID,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --region "$AWS_REGION"
+  aws dynamodb create-table \
+    --table-name "$DYNAMODB_TABLE" \
+    --attribute-definitions \
+        AttributeName=LockID,AttributeType=S \
+    --key-schema \
+        AttributeName=LockID,KeyType=HASH \
+    --billing-mode PAY_PER_REQUEST \
+    --region "$AWS_REGION"
 
-echo "DynamoDB table created."
+  echo "DynamoDB table created."
+fi
 
 
 # 6. Wait for DynamoDB table

@@ -32,5 +32,6 @@
         --set prometheus.service.nodePort=31090
         --set grafana.service.type=NodePort
         --set grafana.service.nodePort=31300
+        --set grafana.adminPassword=admin123
         --set alertmanager.service.type=NodePort
         --set alertmanager.service.nodePort=31400

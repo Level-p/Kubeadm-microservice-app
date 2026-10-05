@@ -15,7 +15,7 @@ pipeline {
 
     environment {
         PATH = "/var/lib/jenkins/.local/bin:${env.PATH}"
-        SLACKCHANNEL = 'varsitix'
+        SLACKCHANNEL = 'devops-team'
         SLACKCREDENTIALS = credentials('slack-cred')
 
     }
