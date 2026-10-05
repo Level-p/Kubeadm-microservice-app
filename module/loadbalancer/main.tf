@@ -31,9 +31,9 @@ resource "aws_lb" "stage_lb" {
 
 #creating stage target group
 resource "aws_lb_target_group" "stage_tg" {
-  name        = "${var.name}-stage-tg-ip"
-  port        = 80
-  protocol    = "HTTP"
+  name        = "${var.name}-stage-tg-hp"
+  port        = 443
+  protocol    = "HTTPS"
   target_type = "ip"
   vpc_id      = var.vpc_id
 
@@ -124,9 +124,9 @@ resource "aws_lb" "prod_lb" {
 
 #creating prod target group
 resource "aws_lb_target_group" "prod_tg" {
-  name        = "${var.name}-prod-tg-ip"
-  port        = 80
-  protocol    = "HTTP"
+  name        = "${var.name}-prod-tg-hp"
+  port        = 443
+  protocol    = "HTTPS"
   target_type = "ip"
   vpc_id      = var.vpc_id
 
@@ -217,9 +217,9 @@ resource "aws_lb" "prometheus_lb" {
 
 #creating prometheus target group
 resource "aws_lb_target_group" "prometheus_tg" {
-  name        = "${var.name}-prometheus-tg-ip"
-  port        = 80
-  protocol    = "HTTP"
+  name        = "${var.name}-prometheus-tg-hp"
+  port        = 443
+  protocol    = "HTTPS"
   target_type = "ip"
   vpc_id      = var.vpc_id
 
@@ -310,9 +310,9 @@ resource "aws_lb" "grafana_lb" {
 
 #creating grafana target group
 resource "aws_lb_target_group" "grafana_tg" {
-  name        = "${var.name}-grafana-tg-ip"
-  port        = 80
-  protocol    = "HTTP"
+  name        = "${var.name}-grafana-tg-hp"
+  port        = 443
+  protocol    = "HTTPS"
   target_type = "ip"
   vpc_id      = var.vpc_id
 

@@ -36,6 +36,12 @@ aws s3 cp s3://"${bucket_name}"/playbooks /etc/ansible/playbooks --recursive
 # Test Ansible installation
 ansible --version
 
+# Group names such as main-master contain hyphens; keep them and silence the warning
+cat > /etc/ansible/ansible.cfg <<EOF
+[defaults]
+force_valid_group_names = ignore
+EOF
+
 # Update Ansible inventory file
 echo "[main-master]" > /etc/ansible/hosts
 echo "${master1_ip} ansible_user=ubuntu" >> /etc/ansible/hosts
